@@ -5,6 +5,14 @@ import fitz  # PyMuPDF
 print("Backend starting...")
 
 app = Flask(__name__)
+import logging
+
+# Basic logging setup
+logging.basicConfig(level=logging.INFO)
+
+def handle_error(e, user_msg="Something went wrong"):
+    logging.error(str(e))
+    return jsonify({"error": user_msg, "details": str(e)})
 CORS(app)
 
 try:
@@ -47,7 +55,7 @@ Notes:
         result = call_ai(prompt)
         return jsonify({"summary": result})
     except Exception as e:
-        return jsonify({"summary": f"Error: {str(e)}"})
+        return handle_error(e, "Error generating summary")
 
 
 @app.route("/questions", methods=["POST"])
@@ -91,7 +99,7 @@ Notes:
         return jsonify({"questions": result})
 
     except Exception as e:
-        return jsonify({"questions": str(e)})
+        return handle_error(e, "Error generating questions")
 
 
 @app.route("/mcq", methods=["POST"])
@@ -120,7 +128,7 @@ Notes:
         result = call_ai(prompt)
         return jsonify({"mcq": result})
     except Exception as e:
-        return jsonify({"mcq": f"Error: {str(e)}"})
+        return handle_error(e, "Error generating MCQs")
     
 @app.route("/upload_pdf", methods=["POST"])
 def upload_pdf():
@@ -138,7 +146,7 @@ def upload_pdf():
         return jsonify({"text": extracted_text})
 
     except Exception as e:
-        return jsonify({"text": f"Error: {str(e)}"})
+        return handle_error(e, "Error processing PDF")
 
 
 @app.route("/chat", methods=["POST"])
@@ -163,8 +171,7 @@ Student's Question:
         result = call_ai(prompt)
         return jsonify({"answer": result})
     except Exception as e:
-        return jsonify({"answer": f"Error: {str(e)}"})
-
+        return handle_error(e, "Error in chat response")
 
 if __name__ == "__main__":
     print("Starting Flask server on http://127.0.0.1:5000")
