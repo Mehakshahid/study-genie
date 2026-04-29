@@ -20,20 +20,26 @@ def upload_pdf(file):
         return str(e)
 
 
-def questions(text):
+def questions(text, difficulty):
     try:
-        res = requests.post(f"{BACKEND_URL}/questions", json={"text": text})
-        return res.json().get("questions", "Error getting questions.")
+        res = requests.post(
+            f"{BACKEND_URL}/questions",
+            json={"text": text, "difficulty": difficulty}
+        )
+        return res.json().get("questions", "Error")
     except Exception as e:
-        return f"Backend error: {str(e)}"
+        return str(e)
 
 
-def mcq(text):
+def mcq(text, difficulty):
     try:
-        res = requests.post(f"{BACKEND_URL}/mcq", json={"text": text})
+        res = requests.post(
+            f"{BACKEND_URL}/mcq",
+            json={"text": text, "difficulty": difficulty}
+        )
         return res.json().get("mcq", "Error getting MCQs.")
     except Exception as e:
-        return f"Backend error: {str(e)}"
+        return str(e)
 
 
 def chat(question, context):
@@ -52,11 +58,12 @@ css = """
     background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
     min-height: 100vh;
 }
-textarea, input {
+textarea, input, select {
     background: #1e1e2e !important;
     color: #cdd6f4 !important;
     border-radius: 10px !important;
     border: 1px solid #45475a !important;
+    padding-left: 8px !important;   /* <-- adds space between border and text */
 }
 label {
     color: #cdd6f4 !important;
@@ -69,42 +76,65 @@ button {
 }
 """
 
+
 with gr.Blocks(css=css, title="Study Genie") as app:
     gr.Markdown("# Study Genie")
     gr.Markdown("### Your AI-powered Study Assistant")
 
     notes = gr.Textbox(
         label="Paste your study notes here",
-        lines=8,
-        placeholder="Paste your notes here and click any button below..."
+        lines=8
     )
-     
 
     gr.Markdown("### UPLOAD PDF")
     pdf_input = gr.File(label="Upload PDF", file_types=[".pdf"])
     pdf_btn = gr.Button("Extract PDF Text")
 
     gr.Markdown("### Summary")
-    summary_output = gr.Textbox(lines=5, show_label=False)
+    summary_output = gr.Textbox(lines=5,show_label=False)
     btn_summarize = gr.Button("Summarize")
 
+    
     gr.Markdown("### Questions")
-    questions_output = gr.Textbox(lines=6, show_label=False)
+    difficulty_q = gr.Dropdown(
+        choices=["Easy", "Medium", "Hard"],
+        value="Easy",
+        label="Select Difficulty"
+    )
+    questions_output = gr.Textbox(lines=6,show_label=False)
     btn_questions = gr.Button("Generate Questions")
 
+    
     gr.Markdown("### MCQs")
-    mcq_output = gr.Textbox(lines=8, show_label=False)
+    difficulty_mcq = gr.Dropdown(
+        choices=["Easy", "Medium", "Hard"],
+        value="Easy",
+        label="Select Difficulty"
+    )
+    mcq_output = gr.Textbox(lines=8,show_label=False)
     btn_mcq = gr.Button("Generate MCQs")
 
     gr.Markdown("### Chat with your notes")
-    chat_q = gr.Textbox(label="Ask a question about your notes")
+    chat_q = gr.Textbox(label="Type here")
     chat_btn = gr.Button("Ask AI")
-    chat_out = gr.Textbox(label="Answer", lines=4)
+    chat_out = gr.Textbox(label="Answer")
 
+   
     pdf_btn.click(upload_pdf, inputs=pdf_input, outputs=notes)
     btn_summarize.click(summarize, inputs=notes, outputs=summary_output)
-    btn_questions.click(questions, inputs=notes, outputs=questions_output)
-    btn_mcq.click(mcq, inputs=notes, outputs=mcq_output)
+
+    btn_questions.click(
+        questions,
+        inputs=[notes, difficulty_q],
+        outputs=questions_output
+    )
+
+    btn_mcq.click(
+        mcq,
+        inputs=[notes, difficulty_mcq],
+        outputs=mcq_output
+    )
+
     chat_btn.click(chat, inputs=[chat_q, notes], outputs=chat_out)
 
 

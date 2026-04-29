@@ -32,6 +32,7 @@ def home():
 def summarize():
     try:
         text = request.json.get("text", "").strip()
+        difficulty = request.json.get("difficulty", "Medium")
         if not text:
             return jsonify({"summary": "Please provide some notes to summarize."})
         if not AI_AVAILABLE:
@@ -53,34 +54,57 @@ Notes:
 def questions():
     try:
         text = request.json.get("text", "").strip()
-        if not text:
-            return jsonify({"questions": "Please provide some notes to generate questions from."})
-        if not AI_AVAILABLE:
-            return jsonify({"questions": "AI is not available. Check your API key."})
+        difficulty = request.json.get("difficulty", "Medium")
 
-        prompt = f"""Read the following study notes and generate exactly 7 study questions.
-Number each question (1. 2. 3. etc.).
-Make them clear and useful for a student to test their understanding.
+        if not text:
+            return jsonify({"questions": "Please provide notes."})
+
+        if not AI_AVAILABLE:
+            return jsonify({"questions": "AI not available."})
+
+        prompt = f"""
+Generate EXACTLY 7 questions of ONLY {difficulty.upper()} difficulty.
+
+STRICT RULES:
+- Do NOT include EASY/MEDIUM/HARD labels
+- Do NOT mix difficulty levels
+- All 7 questions must match {difficulty.upper()} level ONLY
+- No repetition
+- Each question must be from a different concept
+
+Difficulty definition:
+- EASY → basic definitions, direct facts
+- MEDIUM → conceptual understanding, application
+- HARD → analytical, reasoning, scenario-based
+
+OUTPUT FORMAT:
+1. Question
+2. Question
+3. Question
+...
 
 Notes:
-{text[:3000]}
+{text[:4000]}
 """
+
         result = call_ai(prompt)
         return jsonify({"questions": result})
+
     except Exception as e:
-        return jsonify({"questions": f"Error: {str(e)}"})
+        return jsonify({"questions": str(e)})
 
 
 @app.route("/mcq", methods=["POST"])
 def mcq():
     try:
         text = request.json.get("text", "").strip()
+        difficulty = request.json.get("difficulty", "Medium")
         if not text:
             return jsonify({"mcq": "Please provide some notes to generate MCQs from."})
         if not AI_AVAILABLE:
             return jsonify({"mcq": "AI is not available. Check your API key."})
 
-        prompt = f"""Generate 5 multiple choice questions (MCQs) from the following study notes.
+        prompt = f"""Generate 5 {difficulty.upper()} level MCQs.
 
 Format each MCQ exactly like this:
 Q1. [Question]
