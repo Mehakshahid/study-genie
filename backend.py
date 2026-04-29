@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import fitz  # PyMuPDF
 
 print("Backend starting...")
 
@@ -13,6 +14,13 @@ try:
 except Exception as e:
     print("AI helper failed to load:", e)
     AI_AVAILABLE = False
+    
+def extract_text_from_pdf(file):
+    text = ""
+    pdf = fitz.open(stream=file.read(), filetype="pdf")
+    for page in pdf:
+        text += page.get_text()
+    return text
 
 
 @app.route("/")
@@ -89,6 +97,24 @@ Notes:
         return jsonify({"mcq": result})
     except Exception as e:
         return jsonify({"mcq": f"Error: {str(e)}"})
+    
+@app.route("/upload_pdf", methods=["POST"])
+def upload_pdf():
+    try:
+        file = request.files.get("file")
+
+        if not file:
+            return jsonify({"text": "No file uploaded"})
+
+        extracted_text = extract_text_from_pdf(file)
+
+        if not extracted_text.strip():
+            return jsonify({"text": "Could not extract text from PDF"})
+
+        return jsonify({"text": extracted_text})
+
+    except Exception as e:
+        return jsonify({"text": f"Error: {str(e)}"})
 
 
 @app.route("/chat", methods=["POST"])

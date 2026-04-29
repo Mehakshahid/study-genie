@@ -10,6 +10,14 @@ def summarize(text):
         return res.json().get("summary", "Error getting summary.")
     except Exception as e:
         return f"Backend error: {str(e)}"
+    
+def upload_pdf(file):
+    try:
+        files = {"file": open(file.name, "rb")}
+        res = requests.post(f"{BACKEND_URL}/upload_pdf", files=files)
+        return res.json().get("text", "Error extracting PDF")
+    except Exception as e:
+        return str(e)
 
 
 def questions(text):
@@ -70,26 +78,30 @@ with gr.Blocks(css=css, title="Study Genie") as app:
         lines=8,
         placeholder="Paste your notes here and click any button below..."
     )
+     
 
-    with gr.Row():
-        btn_summarize = gr.Button("Summarize")
-        btn_questions = gr.Button("Generate Questions")
-        btn_mcq = gr.Button("Generate MCQs")
+    gr.Markdown("### UPLOAD PDF")
+    pdf_input = gr.File(label="Upload PDF", file_types=[".pdf"])
+    pdf_btn = gr.Button("Extract PDF Text")
 
     gr.Markdown("### Summary")
     summary_output = gr.Textbox(lines=5, show_label=False)
+    btn_summarize = gr.Button("Summarize")
 
     gr.Markdown("### Questions")
     questions_output = gr.Textbox(lines=6, show_label=False)
+    btn_questions = gr.Button("Generate Questions")
 
     gr.Markdown("### MCQs")
     mcq_output = gr.Textbox(lines=8, show_label=False)
+    btn_mcq = gr.Button("Generate MCQs")
 
     gr.Markdown("### Chat with your notes")
     chat_q = gr.Textbox(label="Ask a question about your notes")
     chat_btn = gr.Button("Ask AI")
     chat_out = gr.Textbox(label="Answer", lines=4)
 
+    pdf_btn.click(upload_pdf, inputs=pdf_input, outputs=notes)
     btn_summarize.click(summarize, inputs=notes, outputs=summary_output)
     btn_questions.click(questions, inputs=notes, outputs=questions_output)
     btn_mcq.click(mcq, inputs=notes, outputs=mcq_output)
